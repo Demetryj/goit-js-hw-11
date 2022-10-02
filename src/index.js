@@ -1,11 +1,14 @@
 import './css/styles.css';
 import Notiflix from 'notiflix';
 import axios from 'axios';
+import SimpleLightbox from 'simplelightbox';
+// Додатковий імпорт стилів
+import 'simplelightbox/dist/simple-lightbox.min.css';
 
 const KEY_API = '30262490-03bcd09aff61aef6d7939f62f';
 const URL = 'https://pixabay.com/api/';
 let page = 1;
-const per_page = 40;
+const per_page = 100;
 let sumPerPage = 0;
 
 const formEl = document.querySelector('#search-form');
@@ -51,6 +54,8 @@ async function onFormSubmit(event) {
       Notiflix.Notify.info(
         'Sorry, there are no images matching your search query. Please try again.'
       );
+    } else if (inputValue === '') {
+      return;
     } else {
       renderPhotoCard(arrayImages);
       sumPerPage = per_page;
@@ -78,6 +83,13 @@ async function onbtnLoadMoreEl() {
     const newPagedataOfImages = await fetchImages(dataInput);
     const newArrayImages = newPagedataOfImages.hits;
     const maxQuantityImages = newPagedataOfImages.totalHits;
+
+    if (maxQuantityImages > sumPerPage) {
+      Notiflix.Notify.info(`Hooray! We found ${maxQuantityImages} images.`, {
+        timeout: 3000,
+        position: 'left-top',
+      });
+    }
 
     renderPhotoCard(newArrayImages);
 
