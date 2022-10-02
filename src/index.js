@@ -8,7 +8,7 @@ import 'simplelightbox/dist/simple-lightbox.min.css';
 const KEY_API = '30262490-03bcd09aff61aef6d7939f62f';
 const URL = 'https://pixabay.com/api/';
 let page = 1;
-const per_page = 100;
+const per_page = 40;
 let sumPerPage = 0;
 
 const formEl = document.querySelector('#search-form');
@@ -18,7 +18,7 @@ const btnLoadMoreEl = document.querySelector('.load-more');
 
 formEl.addEventListener('submit', onFormSubmit);
 
-async function fetchImages(name) {
+async function fetchImages(name, page) {
   const options = {
     params: {
       key: KEY_API,
@@ -58,9 +58,11 @@ async function onFormSubmit(event) {
       return;
     } else {
       renderPhotoCard(arrayImages);
+      const lightbox = new SimpleLightbox('.gallery a', {
+        /* options */
+      }); // використання бібліотеки "SimpleLightbox" по створенню лайтбокса з великим зображенням
+
       sumPerPage = per_page;
-      //   console.log(sumPerPage);
-      // console.log(maxQuantityImages);
 
       btnLoadMoreEl.classList.remove('visually-hidden');
 
@@ -74,13 +76,13 @@ async function onFormSubmit(event) {
 async function onbtnLoadMoreEl() {
   const dataInput = inputEl.value;
 
-  //   console.log(page);
+  page += 1;
   sumPerPage += per_page;
-  //   console.log(sumPerPage);
+
   btnLoadMoreEl.classList.add('visually-hidden');
 
   try {
-    const newPagedataOfImages = await fetchImages(dataInput);
+    const newPagedataOfImages = await fetchImages(dataInput, page);
     const newArrayImages = newPagedataOfImages.hits;
     const maxQuantityImages = newPagedataOfImages.totalHits;
 
@@ -92,6 +94,11 @@ async function onbtnLoadMoreEl() {
     }
 
     renderPhotoCard(newArrayImages);
+    smoothScroll();
+
+    //використання бібліотеки "SimpleLightbox" для створення лайтбокса з великим зображенням та метода refresh() при завантаженні ще зображень за запитом після натискання кнопки "Load more"
+    const gallery = new SimpleLightbox('.gallery a');
+    gallery.refresh();
 
     btnLoadMoreEl.classList.remove('visually-hidden');
 
@@ -123,7 +130,8 @@ function renderPhotoCard(arrayImages) {
       } = img;
 
       return `<div class="photo-card">
-  <img src="${webformatURL}" alt="${tags}" loading="lazy" width='200' height='140' />
+      <a class='link' href="${largeImageURL}">
+      <img src="${webformatURL}" alt="${tags}" loading="lazy" width='200' height='140' />
   <div class="info">
     <p class="info-item">
       <b>Likes</b> ${likes}
@@ -138,9 +146,39 @@ function renderPhotoCard(arrayImages) {
       <b>Downloads</b> ${downloads}
     </p>
   </div>
-</div>`;
+      </a>
+  </div>`;
     })
     .join('');
 
   galleryEl.insertAdjacentHTML('beforeend', markup);
+}
+
+function smoothScroll() {
+  const positionCardToScroll =
+    galleryEl.firstElementChild.getBoundingClientRect().height; // отримання координати позиції першого елемента (картки) в гвлереї, які загрузилися після натискання кнопки "Load more"
+
+  window.scrollBy({
+    top: positionCardToScroll * 2,
+    behavior: 'smooth',
+  });
+
+  //Плавне прокручування сторінки після запиту і відтворення кожної наступної групи зображень.
+  // const { height: cardHeight } = document;
+  // .querySelector('.gallery')
+  // .firstElementChild.getBoundingClientRect();
+
+  // window.scrollBy({
+  //   top: cardHeight * 2,
+  //   behavior: 'smooth',
+  // });
+
+  // const x = galleryEl.firstElementChild.getBoundingClientRect();
+  // const y = x.height;
+  // console.log(y);
+
+  // window.scrollBy({
+  //   top: y * 2,
+  //   behavior: 'smooth',
+  // });
 }
