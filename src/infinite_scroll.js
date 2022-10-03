@@ -44,7 +44,7 @@ async function fetchImages(name, page) {
 
   const response = await axios.get(URL, options);
   const data = response.data;
-  //   console.log(data);
+
   return data;
 }
 
@@ -84,8 +84,6 @@ async function onFormSubmit(event) {
       sumPerPage = per_page;
       page = 1;
 
-      console.log(sumPerPage);
-
       window.addEventListener('scroll', throttle(checkPosition, 250));
       window.addEventListener('resize', throttle(checkPosition, 250));
     }
@@ -109,8 +107,6 @@ async function fetchNewPageImagesWithScroll() {
 
     page += 1;
     sumPerPage += per_page;
-
-    console.log(page);
 
     const newPagedataOfImages = await fetchImages(dataInput, page);
     const newArrayImages = newPagedataOfImages.hits;

@@ -36,7 +36,7 @@ async function fetchImages(name, page) {
 
   const response = await axios.get(URL, options);
   const data = response.data;
-  //   console.log(data);
+
   return data;
 }
 
