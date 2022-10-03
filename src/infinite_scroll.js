@@ -4,6 +4,7 @@ import axios from 'axios';
 import SimpleLightbox from 'simplelightbox';
 // Додатковий імпорт стилів
 import 'simplelightbox/dist/simple-lightbox.min.css';
+import throttle from 'lodash.throttle';
 
 const KEY_API = '30262490-03bcd09aff61aef6d7939f62f';
 const URL = 'https://pixabay.com/api/';
@@ -11,10 +12,17 @@ let page = 1;
 const per_page = 40;
 let sumPerPage = 0;
 
+// Если отправили запрос, но ещё не получили ответ,
+// не нужно отправлять ещё один запрос:
+let isLoading = false;
+
+// Если контент закончился, вообще больше не нужно
+// отправлять никаких запросов:
+let shouldLoad = true;
+
 const formEl = document.querySelector('#search-form');
 const inputEl = document.querySelector('input');
 const galleryEl = document.querySelector('.gallery');
-const btnLoadMoreEl = document.querySelector('.load-more');
 
 formEl.addEventListener('submit', onFormSubmit);
 
@@ -43,8 +51,8 @@ async function fetchImages(name, page) {
 async function onFormSubmit(event) {
   event.preventDefault();
   galleryEl.innerHTML = '';
-  sumPerPage = 0;
-  btnLoadMoreEl.classList.add('visually-hidden');
+  isLoading = false;
+  shouldLoad = true;
 
   const inputValue = event.currentTarget.elements.safesearch.value.trim();
 
@@ -76,24 +84,34 @@ async function onFormSubmit(event) {
       sumPerPage = per_page;
       page = 1;
 
-      btnLoadMoreEl.classList.remove('visually-hidden');
+      console.log(sumPerPage);
 
-      btnLoadMoreEl.addEventListener('click', onbtnLoadMoreEl);
+      window.addEventListener('scroll', throttle(checkPosition, 250));
+      window.addEventListener('resize', throttle(checkPosition, 250));
     }
   } catch (error) {
     console.log(error.message);
   }
 }
 
-async function onbtnLoadMoreEl() {
+async function fetchNewPageImagesWithScroll() {
   const dataInput = inputEl.value;
 
-  page += 1;
-  sumPerPage += per_page;
-
-  btnLoadMoreEl.classList.add('visually-hidden');
-
   try {
+    // Если мы уже отправили запрос, или новый контент закончился,
+    // то новый запрос отправлять не надо:
+    if (isLoading || !shouldLoad) {
+      return;
+    }
+
+    // Предотвращаем новые запросы, пока не закончится этот:
+    isLoading = true;
+
+    page += 1;
+    sumPerPage += per_page;
+
+    console.log(page);
+
     const newPagedataOfImages = await fetchImages(dataInput, page);
     const newArrayImages = newPagedataOfImages.hits;
     const maxQuantityImages = newPagedataOfImages.totalHits;
@@ -105,15 +123,21 @@ async function onbtnLoadMoreEl() {
 
       renderMarkupAndSmoothScroll(newArrayImages);
 
-      btnLoadMoreEl.classList.add('visually-hidden');
-      btnLoadMoreEl.removeEventListener('click', onbtnLoadMoreEl);
+      window.removeEventListener('scroll', throttle(checkPosition, 250));
+      window.removeEventListener('resize', throttle(checkPosition, 250));
+
+      // Если мы увидели, что контент закончился,
+      // отмечаем, что больше запрашивать ничего не надо:
+      shouldLoad = false;
 
       return;
     }
 
     renderMarkupAndSmoothScroll(newArrayImages);
 
-    btnLoadMoreEl.classList.remove('visually-hidden');
+    // Когда запрос выполнен и обработан,
+    // снимаем флаг isLoading:
+    isLoading = false;
   } catch (error) {
     console.log(error.message);
   }
@@ -157,40 +181,42 @@ function renderPhotoCard(arrayImages) {
   galleryEl.insertAdjacentHTML('beforeend', markup);
 }
 
-function smoothScroll() {
-  const positionCardToScroll =
-    galleryEl.firstElementChild.getBoundingClientRect().height; // отримання координати позиції першого елемента (картки) в гвлереї, які загрузилися після натискання кнопки "Load more"
+async function checkPosition() {
+  // Нам потребуется знать высоту документа и высоту экрана:
+  const height = document.body.offsetHeight;
+  const screenHeight = window.innerHeight;
 
-  window.scrollBy({
-    top: positionCardToScroll * 2,
-    behavior: 'smooth',
-  });
+  // Они могут отличаться: если на странице много контента,
+  // высота документа будет больше высоты экрана (отсюда и скролл).
 
-  //Плавне прокручування сторінки після запиту і відтворення кожної наступної групи зображень.
-  // const { height: cardHeight } = document;
-  // .querySelector('.gallery')
-  // .firstElementChild.getBoundingClientRect();
+  // Записываем, сколько пикселей пользователь уже проскроллил:
+  const scrolled = window.scrollY;
 
-  // window.scrollBy({
-  //   top: cardHeight * 2,
-  //   behavior: 'smooth',
-  // });
+  // Обозначим порог, по приближении к которому
+  // будем вызывать какое-то действие.
+  // В нашем случае — четверть экрана до конца страницы:
+  const threshold = height - screenHeight / 4;
 
-  // const x = galleryEl.firstElementChild.getBoundingClientRect();
-  // const y = x.height;
-  // console.log(y);
+  // Отслеживаем, где находится низ экрана относительно страницы:
+  const position = scrolled + screenHeight;
 
-  // window.scrollBy({
-  //   top: y * 2,
-  //   behavior: 'smooth',
-  // });
+  if (position >= threshold) {
+    // Если мы пересекли полосу-порог, вызываем нужное действие.
+
+    try {
+      await fetchNewPageImagesWithScroll();
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
 }
 
 function renderMarkupAndSmoothScroll(newArrayImages) {
   renderPhotoCard(newArrayImages);
-  smoothScroll();
 
   //використання бібліотеки "SimpleLightbox" для створення лайтбокса з великим зображенням та метода refresh() при завантаженні ще зображень за запитом після натискання кнопки "Load more"
   const gallery = new SimpleLightbox('.gallery a');
-  gallery.refresh();
+  // gallery.refresh();
 }
+
+//https://doka.guide/js/infinite-scroll/#beskonechnaya-prokrutka
