@@ -1,16 +1,18 @@
+import { per_page, page, fetchImages } from './fetch_images';
 import './css/styles.css';
 import Notiflix from 'notiflix';
-import axios from 'axios';
+// import axios from 'axios';
 import SimpleLightbox from 'simplelightbox';
 // Додатковий імпорт стилів
 import 'simplelightbox/dist/simple-lightbox.min.css';
 import throttle from 'lodash.throttle';
 
-const KEY_API = '30262490-03bcd09aff61aef6d7939f62f';
-const URL = 'https://pixabay.com/api/';
-let page = 1;
-const per_page = 40;
+// const KEY_API = '30262490-03bcd09aff61aef6d7939f62f';
+// const URL = 'https://pixabay.com/api/';
+// let page = 1;
+// const per_page = 40;
 let sumPerPage = 0;
+let nextPage = 0;
 
 // Если отправили запрос, но ещё не получили ответ,
 // не нужно отправлять ещё один запрос:
@@ -26,27 +28,27 @@ const galleryEl = document.querySelector('.gallery');
 
 formEl.addEventListener('submit', onFormSubmit);
 
-async function fetchImages(name, page) {
-  const options = {
-    params: {
-      key: KEY_API,
-      q: `${name}`,
-      image_type: 'photo',
-      orientation: 'horizontal',
-      safesearch: true,
-      per_page,
-      page,
-    },
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  };
+// async function fetchImages(name, page) {
+//   const options = {
+//     params: {
+//       key: KEY_API,
+//       q: `${name}`,
+//       image_type: 'photo',
+//       orientation: 'horizontal',
+//       safesearch: true,
+//       per_page,
+//       page,
+//     },
+//     headers: {
+//       'Content-Type': 'application/json',
+//     },
+//   };
 
-  const response = await axios.get(URL, options);
-  const data = response.data;
+//   const response = await axios.get(URL, options);
+//   const data = response.data;
 
-  return data;
-}
+//   return data;
+// }
 
 async function onFormSubmit(event) {
   event.preventDefault();
@@ -82,7 +84,7 @@ async function onFormSubmit(event) {
       }); // використання бібліотеки "SimpleLightbox" по створенню лайтбокса з великим зображенням
 
       sumPerPage = per_page;
-      page = 1;
+      nextPage = page; // nextPage = 1;
 
       window.addEventListener('scroll', throttle(checkPosition, 250));
       window.addEventListener('resize', throttle(checkPosition, 250));
@@ -105,10 +107,10 @@ async function fetchNewPageImagesWithScroll() {
     // Предотвращаем новые запросы, пока не закончится этот:
     isLoading = true;
 
-    page += 1;
+    nextPage += page;
     sumPerPage += per_page;
 
-    const newPagedataOfImages = await fetchImages(dataInput, page);
+    const newPagedataOfImages = await fetchImages(dataInput, nextPage);
     const newArrayImages = newPagedataOfImages.hits;
     const maxQuantityImages = newPagedataOfImages.totalHits;
 
