@@ -58,6 +58,12 @@ async function onFormSubmit(event) {
 
   const inputValue = event.currentTarget.elements.safesearch.value.trim();
 
+  // const {
+  //   elements: { safesearch },
+  // } = event.currentTarget;
+
+  //  const inputValue = safesearch.value.trim();
+
   try {
     const dataOfImages = await fetchImages(inputValue);
     const arrayImages = dataOfImages.hits;

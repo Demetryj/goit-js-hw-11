@@ -50,6 +50,12 @@ async function onFormSubmit(event) {
 
   const inputValue = event.currentTarget.elements.safesearch.value.trim();
 
+  // const {
+  //   elements: { safesearch },
+  // } = event.currentTarget;
+
+  // const inputValue = safesearch.value.trim();
+
   try {
     const dataOfImages = await fetchImages(inputValue);
     const arrayImages = dataOfImages.hits;
@@ -74,6 +80,16 @@ async function onFormSubmit(event) {
       const lightbox = new SimpleLightbox('.gallery a', {
         /* options */
       }); // використання бібліотеки "SimpleLightbox" по створенню лайтбокса з великим зображенням
+
+      /* Перевірка: якщо кількість зображень, що завантажилися при сабміті форми,
+       менше ніж per_page (у нашому випадку 40), 
+       тоді кнопка "Load More" не з'являється (не видаляється клас 'visually-hidden')
+      і виходимо з функції
+       */
+      if (totalQuantityImages / per_page <= 1) {
+        btnLoadMoreEl.classList.add('visually-hidden');
+        return;
+      }
 
       sumPerPage = per_page;
       nextPage = page; // nextPage = 1;
