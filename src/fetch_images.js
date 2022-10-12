@@ -23,9 +23,9 @@ export async function fetchImages(name, page) {
   };
 
   const response = await axios.get(URL, options);
-  if (!response.ok) {
-    throw new Error(response.status);
-  }
+  // if (!response.ok) {
+  //   throw new Error(response.status);
+  // } не потрібно, бо працюємо з axios
   const data = response.data;
 
   return data;
