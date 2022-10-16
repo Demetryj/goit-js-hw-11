@@ -13,6 +13,8 @@ import 'simplelightbox/dist/simple-lightbox.min.css';
 let sumPerPage = 0;
 let nextPage = 0;
 
+
+
 const formEl = document.querySelector('#search-form');
 const inputEl = document.querySelector('input');
 const galleryEl = document.querySelector('.gallery');
